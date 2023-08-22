@@ -20,7 +20,7 @@ class PostFactory extends Factory
         return [
             'title' => $this->faker->sentence(),
             'slug' => 'to-jest-slug',
-            'author_id' => User::factory(),
+            'author_id' => User::all()->random()->id,
             'image' => $this->faker->image('public/storage', 640, 480, null, false),
         ];
     }

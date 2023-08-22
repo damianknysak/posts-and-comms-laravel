@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\LikedPost;
 use App\Models\Post;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -16,8 +17,19 @@ class LikedPostFactory extends Factory
      *
      * @return array<string, mixed>
      */
+    public function randomize_post_id()
+    {
+        return Post::all()->random()->id;
+    }
+
+    public function randomize_user_id()
+    {
+        return User::all()->random()->id;
+    }
+
     public function definition(): array
     {
+
         return [
             'post_id' => Post::factory(),
             'user_id' => User::factory(),

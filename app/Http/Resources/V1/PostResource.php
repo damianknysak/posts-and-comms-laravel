@@ -27,7 +27,6 @@ class PostResource extends JsonResource
     public function toArray(Request $request): array
     {
         $comments = $this->comments;
-        $commCollection = new CommentCollection($this->paginate($comments));
 
         return [
             'id' => $this->id,
@@ -35,10 +34,10 @@ class PostResource extends JsonResource
             'slug' => $this->slug,
             'author' => $this->author->name,
             'authorId' => $this->author->id,
+            'authorImage' => $this->author->profile_image,
             'image' => $this->image,
             'createdAt' => $this->created_at,
             'updatedAt' => $this->updated_at,
-            // 'comments' => $commCollection,
             'commentsAmount' => $this->comments->count(),
             'likes' => [
                 'totalAmount' => $this->likes->count(),
@@ -48,6 +47,7 @@ class PostResource extends JsonResource
                 'cryReactionAmount' => $this->likes->where('reaction', 'cry')->count(),
 
             ],
+            'commentsRoute' => '/comments?postId[eq]=' . $this->id
         ];
     }
 }
