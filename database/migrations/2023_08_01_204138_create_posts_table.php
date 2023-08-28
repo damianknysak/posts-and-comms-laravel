@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string("slug");
             $table->foreignId("author_id");
             $table->string("image");
+            $table->string("blur_hash");
             $table->timestamps();
 
             $table->foreign('author_id')->references('id')->on('users')->onDelete('cascade');

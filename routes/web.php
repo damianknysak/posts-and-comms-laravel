@@ -29,11 +29,19 @@ Route::get('/', function () {
     ]);
 });
 
+Route::get('/user-email-verified', function () {
+    return Inertia::render('Auth/EmailVerifiedConfirmation');
+})->name('user.email-verified-success');
 
-Route::middleware('auth')->group(function () {
+
+Route::middleware(['role:Admin'])->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
+
+    Route::get('/test', function () {
+        return Inertia::render('Test');
+    })->name('test');
 
     Route::get('/posts', [WebPostController::class, 'index'])->name('posts.index');
     Route::get('/posts/{id}', [WebPostController::class, 'show'])->name('posts.show');
@@ -42,7 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/posts/delete/{id}', [WebPostController::class, 'destroy'])->name('posts.destroy');
     Route::post('posts/{id}/like', [LikedPostController::class, 'store'])->name('like.store');
     Route::delete('posts/{id}/dislike', [LikedPostController::class, 'destroy'])->name('like.destroy');
-
+    Route::post('posts/{id}/comment', [WebCommentController::class, 'addCommentToPost'])->name('comments.store');
 
     Route::get('/comments', [WebCommentController::class, 'index'])->name('comments.index');
     Route::get('/comments/{id}', [WebCommentController::class, 'show'])->name('comments.show');

@@ -1,17 +1,21 @@
-import { Link } from "@inertiajs/react";
-import React from "react";
-import { FaHeart, FaLaughBeam, FaSadCry, FaThumbsUp } from "react-icons/fa";
-
-interface LikesProps {
-    likeReactionAmount: number;
-    hahaReactionAmount: number;
-    superReactionAmount: number;
-    cryReactionAmount: number;
-}
+import { ReactionProps } from "@/Interfaces/ReactionProps";
+import { Link, router } from "@inertiajs/react";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
+import {
+    FaHeart,
+    FaLaughBeam,
+    FaRegHeart,
+    FaRegLaughBeam,
+    FaRegSadCry,
+    FaRegThumbsUp,
+    FaSadCry,
+    FaThumbsUp,
+} from "react-icons/fa";
 
 interface PostBottomSectionProps {
     commentsAmount: number;
-    likes: LikesProps;
+    likes: ReactionProps;
     commentsRoute: string;
     postId: number;
 }
@@ -19,45 +23,111 @@ interface PostBottomSectionProps {
 const PostBottomSection: React.FC<PostBottomSectionProps> = ({
     commentsAmount,
     likes,
-    commentsRoute,
     postId,
 }) => {
+    const [reactionType, setReactionType] = useState("");
+
+    const addLike = async (reaction: string) => {
+        try {
+            const formData = new FormData();
+            formData.append("reaction", reaction);
+            //dislike
+            if (reactionType == reaction) {
+                setReactionType("");
+                const response = await axios.delete(`/posts/${postId}/dislike`);
+            } else {
+                //like
+                setReactionType(reaction);
+                const response = await axios.post(
+                    `/posts/${postId}/like`,
+                    formData,
+                    {
+                        headers: {
+                            "Content-Type": "multipart/form-data",
+                        },
+                    }
+                );
+            }
+            router.reload({ only: ["posts", "post"] });
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    useEffect(() => {
+        if (likes.currentUserReaction) {
+            setReactionType(likes.currentUserReaction);
+        }
+    }, [likes.currentUserReaction]);
     return (
         <div className="p-3 flex justify-between items-center">
             <div className="pr-5 flex flex-row space-x-2">
-                <div className="flex flex-col items-center">
-                    <FaThumbsUp className="text-blue-500" size={24} />
+                <div
+                    onClick={() => {
+                        addLike("like");
+                    }}
+                    className="flex flex-col items-center cursor-pointer"
+                >
+                    {reactionType == "like" ? (
+                        <FaThumbsUp className="text-blue-500" size={24} />
+                    ) : (
+                        <FaRegThumbsUp className="text-blue-500" size={24} />
+                    )}
+
                     <span className="text-blue-500">
                         {likes.likeReactionAmount}
                     </span>
                 </div>
-                <div className="flex flex-col items-center">
-                    <FaLaughBeam className="text-yellow-200" size={24} />
+                <div
+                    onClick={() => {
+                        addLike("haha");
+                    }}
+                    className="flex flex-col items-center"
+                >
+                    {reactionType == "haha" ? (
+                        <FaLaughBeam className="text-yellow-200" size={24} />
+                    ) : (
+                        <FaRegLaughBeam className="text-yellow-200" size={24} />
+                    )}
                     <span className="text-yellow-200">
                         {likes.hahaReactionAmount}
                     </span>
                 </div>
-                <div className="flex flex-col items-center">
-                    <FaHeart className="text-red-500" size={24} />
+                <div
+                    onClick={() => {
+                        addLike("super");
+                    }}
+                    className="flex flex-col items-center"
+                >
+                    {reactionType == "super" ? (
+                        <FaHeart className="text-red-500" size={24} />
+                    ) : (
+                        <FaRegHeart className="text-red-500" size={24} />
+                    )}
+
                     <span className="text-red-500">
                         {likes.superReactionAmount}
                     </span>
                 </div>
-                <div className="flex flex-col items-center">
-                    <FaSadCry className="text-blue-700" size={24} />
+                <div
+                    onClick={() => {
+                        addLike("cry");
+                    }}
+                    className="flex flex-col items-center"
+                >
+                    {reactionType == "cry" ? (
+                        <FaSadCry className="text-blue-700" size={24} />
+                    ) : (
+                        <FaRegSadCry className="text-blue-700" size={24} />
+                    )}
+
                     <span className="text-blue-700">
                         {likes.cryReactionAmount}
                     </span>
                 </div>
             </div>
             <div className="flex flex-col">
-                <Link
-                    onClick={(e) => {
-                        commentsAmount <= 0 && e.preventDefault();
-                    }}
-                    href={`/posts/${postId}`}
-                    className=""
-                >
+                <Link href={`/posts/${postId}`} className="">
                     <span>komentarze:</span> {commentsAmount}
                 </Link>
             </div>

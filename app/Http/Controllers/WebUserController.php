@@ -7,6 +7,8 @@ use App\Http\Resources\UserCollection;
 use App\Http\Resources\V1\CommentCollection;
 use App\Models\Comment;
 use App\Models\User;
+use Bepsvpt\Blurhash\Facades\BlurHash;
+use Buglinjo\LaravelWebp\Facades\Webp;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -25,33 +27,32 @@ class WebUserController extends Controller
     {
         $user = User::find($id);
         if (!$user) return response(['User not found', 404]);
-        if (Auth::user()->hasRole('Admin') || Auth::id() == $id) {
-            $input = [
-                'name' => $request->name,
-            ];
-            if ($request->hasfile('profile_image')) {
-                $destination_path = 'public/profile_images';
-                $image = $request->file('profile_image');
-                $image_name = time() . '.' . $image->getClientOriginalExtension();
-                $request->file('profile_image')->storeAs($destination_path, $image_name);
-                $input['profile_image'] = 'profile_images/' . $image_name;
+        $input = [
+            'name' => $request->name,
+        ];
+        if ($request->hasfile('profile_image')) {
+            $file = $request->file('profile_image');
+            $image_name = time() . '.' . 'webp';
 
-                // Usuwanie starego pliku
-                if ($user->profile_image != "profile_images/default_profile_image.png") {
-                    if (file_exists(public_path("storage/" . $user->profile_image))) {
-                        unlink(public_path("storage/" . $user->profile_image));
-                    } else {
-                        dd("file doesnt exist");
-                    }
+            $blur = BlurHash::encode($file);
+            $webp = Webp::make($file);
+            $webp->save(public_path('/storage/' . $image_name));
+            $input['profile_image'] = $image_name;
+            $input['blur_hash'] = $blur;
+
+            // Usuwanie starego pliku
+            if ($user->profile_image != "profile_images/default_profile_image.png") {
+                if (file_exists(public_path("storage/" . $user->profile_image))) {
+                    unlink(public_path("storage/" . $user->profile_image));
+                } else {
+                    dd("file doesnt exist");
                 }
             }
-            if (!file_exists(public_path("storage/" . $user->profile_image))) {
-                $user['profile_image'] = "profile_images/default_profile_image.png";
-            }
-            $user->update($input);
-        } else {
-            return response(["Unauthorized", 401]);
         }
+        if (!file_exists(public_path("storage/" . $user->profile_image))) {
+            $user['profile_image'] = "profile_images/default_profile_image.png";
+        }
+        $user->update($input);
     }
 
     public function destroy($id)
@@ -59,9 +60,6 @@ class WebUserController extends Controller
         try {
             $user = User::findOrFail($id);
 
-            if (!Auth::user()->hasRole('Admin')) {
-                return response()->json(['message' => 'You are not authorized to delete this post.'], 403);
-            }
             $profile_img = $user->profile_image;
             $user->delete();
 

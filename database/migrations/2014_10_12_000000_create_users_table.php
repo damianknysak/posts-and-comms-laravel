@@ -18,6 +18,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->string('profile_image');
+            $table->string('blur_hash');
+            $table->timestamp('date_of_birth')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

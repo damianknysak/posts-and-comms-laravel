@@ -1,15 +1,17 @@
 import { PostProps } from "@/Interfaces/PostProps";
 import { PageProps } from "@/types";
-import { Link } from "@inertiajs/react";
-import { FaHeart, FaLaughBeam, FaSadCry, FaThumbsUp } from "react-icons/fa";
 import { SimpleDialogContainer, simpleConfirm } from "react-simple-dialogs";
 import PostHeader from "./PostHeader";
 import PostBottomSection from "./PostBottomSection";
+import { useState } from "react";
+import { Blurhash } from "react-blurhash";
+
 export default function Post({
     post,
     postsAmount,
     auth,
 }: PageProps<{ post: PostProps; postsAmount: number }>) {
+    const [imageLoaded, setImageLoaded] = useState(false);
     return (
         <>
             {post && (
@@ -18,9 +20,25 @@ export default function Post({
                     <PostHeader post={post} postsAmount={postsAmount} />
                     <main>
                         <div>
+                            {imageLoaded || (
+                                <div className="w-full aspect-[4/3] overflow-hidden rounded-xl">
+                                    <Blurhash
+                                        width="100%"
+                                        height={"100%"}
+                                        hash={post.blurHash}
+                                    />
+                                </div>
+                            )}
                             <img
-                                className="w-full rounded-xl"
-                                src={`http://localhost:8000/storage/${post.image}`}
+                                onLoad={() => {
+                                    setImageLoaded(true);
+                                }}
+                                className={
+                                    imageLoaded
+                                        ? "w-full aspect-[4/3] rounded-xl"
+                                        : "w-0 h-0"
+                                }
+                                src={`http://192.168.0.124:8000/storage/${post.image}`}
                             />
                         </div>
                         <PostBottomSection

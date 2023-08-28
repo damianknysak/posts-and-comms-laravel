@@ -9,11 +9,11 @@ use Illuminate\Http\Request;
 use App\Http\Resources\V1\PostResource;
 use App\Filters\V1\PostFilter;
 use App\Http\Requests\V1\StorePostRequest;
-use App\Http\Requests\V1\UpdatePostRequest;
+use Bepsvpt\Blurhash\Facades\BlurHash;
+use Buglinjo\LaravelWebp\Facades\Webp;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\Rule;
+use Intervention\Image\Facades\Image;
 
 class PostController extends Controller
 {
@@ -47,13 +47,15 @@ class PostController extends Controller
             'slug' => $request->slug,
         ];
         if ($request->hasfile('image')) {
-            $destination_path = 'public/';
-            $image = $request->file('image');
-            $image_name = time() . '.' . $image->getClientOriginalExtension();
-            $request->file('image')->storeAs($destination_path, $image_name);
-            $input['image'] = $image_name;
-        }
+            $file = $request->file('image');
+            $image_name = time() . '.' . 'webp';
+            Image::make($file)->resize(640, 480)->encode("webp")
+                ->save(public_path('/storage/' . $image_name));
 
+            $blur = BlurHash::encode($file);
+            $input['image'] = $image_name;
+            $input['blur_hash'] = $blur;
+        }
         return new PostResource(Post::create($input));
     }
 
@@ -69,11 +71,15 @@ class PostController extends Controller
             $post = Post::findOrFail($id);
 
             if ($request->hasfile('image')) {
-                $destination_path = 'public/';
-                $image = $request->file('image');
-                $image_name = time() . '.' . $image->getClientOriginalExtension();
-                $request->file('image')->storeAs($destination_path, $image_name);
+                $file = $request->file('image');
+                $image_name = time() . '.' . 'webp';
+                Image::make($file)->resize(640, 480)->encode("webp")
+                    ->save(public_path('/storage/' . $image_name));
+
+                $blur = BlurHash::encode($file);
                 $input['image'] = $image_name;
+                $input['blur_hash'] = $blur;
+
                 //delete old file
                 if (file_exists(public_path("storage/" . $post->image))) {
                     unlink(public_path("storage/" . $post->image));

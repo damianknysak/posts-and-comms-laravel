@@ -7,9 +7,11 @@ export interface PostProps {
     author: string;
     authorId: number;
     image: string;
+    blurHash: string;
     createdAt: Date;
     commentsAmount: number;
     likes: ReactionProps;
     commentsRoute: string;
     authorImage: string;
+    authorBlurHash: string;
 }

@@ -22,6 +22,7 @@ class PostFactory extends Factory
             'slug' => 'to-jest-slug',
             'author_id' => User::all()->random()->id,
             'image' => $this->faker->image('public/storage', 640, 480, null, false),
+            'blur_hash' => 'LOI~3_WB~pWB_3ofIUj[00fQ00WC'
         ];
     }
 }

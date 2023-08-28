@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Auth;
 
 class PostResource extends JsonResource
 {
@@ -26,7 +27,17 @@ class PostResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $comments = $this->comments;
+        $currentUserReaction = $this->likes
+            ->where('post_id', $this->id)
+            ->where('user_id', Auth::id())
+            ->first();
+
+        if ($currentUserReaction) {
+            $reaction = $currentUserReaction->reaction;
+        } else {
+            $reaction = '';
+        }
+
 
         return [
             'id' => $this->id,
@@ -35,12 +46,15 @@ class PostResource extends JsonResource
             'author' => $this->author->name,
             'authorId' => $this->author->id,
             'authorImage' => $this->author->profile_image,
+            'authorBlurHash' => $this->author->blur_hash,
             'image' => $this->image,
+            'blurHash' => $this->blur_hash,
             'createdAt' => $this->created_at,
             'updatedAt' => $this->updated_at,
             'commentsAmount' => $this->comments->count(),
             'likes' => [
                 'totalAmount' => $this->likes->count(),
+                'currentUserReaction' => $reaction,
                 'likeReactionAmount' => $this->likes->where('reaction', 'like')->count(),
                 'superReactionAmount' => $this->likes->where('reaction', 'super')->count(),
                 'hahaReactionAmount' => $this->likes->where('reaction', 'haha')->count(),

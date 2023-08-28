@@ -9,6 +9,8 @@ import { Link, router } from "@inertiajs/react";
 import { simpleConfirm } from "react-simple-dialogs";
 import EditPostModal from "./EditPostModal";
 import { Inertia, Page } from "@inertiajs/inertia";
+import { Blurhash } from "react-blurhash";
+import UserImage from "../Users/UserImage";
 
 interface PostHeaderProps {
     post: PostProps;
@@ -49,7 +51,6 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post, postsAmount }) => {
             handleDelete();
         }
     };
-
     return (
         <header className="flex flex-col justify-between mx-3">
             <div className="flex justify-between border-b border-gray-500 pb-2 mb-4">
@@ -74,10 +75,13 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post, postsAmount }) => {
                 </Link>
             </div>
             <div className="flex flex-row space-x-2">
-                <img
-                    className="w-10 h-10 bg-red-200 rounded-full"
-                    src={`http://localhost:8000/storage/${post.authorImage}`}
+                <UserImage
+                    imageHash={post.authorBlurHash}
+                    imageUrl={post.authorImage}
+                    width={40}
+                    height={40}
                 />
+
                 <div className="flex flex-col">
                     <Link href={`/users?id[eq]=${post.authorId}`}>
                         <span className="font-semibold">{post.author} </span>

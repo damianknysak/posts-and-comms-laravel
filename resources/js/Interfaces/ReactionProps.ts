@@ -4,4 +4,5 @@ export interface ReactionProps {
     superReactionAmount: number;
     hahaReactionAmount: number;
     cryReactionAmount: number;
+    currentUserReaction: string;
 }

@@ -1,22 +1,16 @@
 import { PostProps } from "@/Interfaces/PostProps";
-import { PageProps } from "@/types";
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
-import {
-    FaFileImage,
-    FaHeart,
-    FaLaughBeam,
-    FaSadCry,
-    FaThumbsUp,
-    FaTimes,
-} from "react-icons/fa";
+import { FaTimes } from "react-icons/fa";
 import moment from "moment";
 import "moment/locale/pl";
 import axios from "axios";
-import { Link, router } from "@inertiajs/react";
+import { router } from "@inertiajs/react";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PostBottomSection from "./PostBottomSection";
-
+import { Cropper } from "react-cropper";
+import "cropperjs/dist/cropper.css";
+import { convertDataUrlToBlob } from "@/utils/CropUtils";
 interface EditPostModalProps {
     setActive: Dispatch<SetStateAction<boolean>>;
     post: PostProps;
@@ -27,32 +21,34 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ setActive, post }) => {
     const [slug, setSlug] = useState("");
     const [selectedImage, setSelectedImage] = useState<File | null>(null);
     const [imageUrl, setImageUrl] = useState<string | null>(null);
-
+    const [image, setImage] = useState("");
+    const [cropData, setCropData] = useState("#");
+    const [cropper, setCropper] = useState<any>();
     useEffect(() => {
         setTitle(post.title);
         setSlug(post.slug);
-        // setImage(post.image);
     }, []);
 
     useEffect(() => {
-        if (selectedImage) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                if (typeof reader.result === "string") {
-                    setImageUrl(reader.result);
-                }
-            };
-            reader.readAsDataURL(selectedImage);
+        if (cropData != "#") {
+            setImageUrl(cropData);
+            setImage("");
         }
-    }, [selectedImage]);
+    }, [cropData]);
 
     const handleSubmit = async () => {
         try {
             const formData = new FormData();
             formData.append("title", title);
             formData.append("slug", slug);
-            if (selectedImage) {
-                formData.append("image", selectedImage);
+
+            if (cropData != "#") {
+                const file = new File(
+                    [convertDataUrlToBlob(cropData)],
+                    "output.jpg",
+                    { type: `image/jpeg` }
+                );
+                formData.append("image", file);
             }
 
             const response = await axios.post(
@@ -67,16 +63,36 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ setActive, post }) => {
 
             toast("Edytowano post!", { type: "success" });
         } catch (error) {
+            console.error(error);
             toast("Błąd przy edycji postu", { type: "error" });
         }
     };
 
-    function getFileInfo(e: React.ChangeEvent<HTMLInputElement>) {
+    const onChange = (e: any) => {
+        e.preventDefault();
+        let files;
+        if (e.dataTransfer) {
+            files = e.dataTransfer.files;
+        } else if (e.target) {
+            files = e.target.files;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            setImage(reader.result as any);
+        };
+        reader.readAsDataURL(files[0]);
+
         if (e.target.files && e.target.files.length > 0) {
             const selectedFile = e.target.files[0];
             setSelectedImage(selectedFile);
         }
-    }
+    };
+
+    const getCropData = () => {
+        if (typeof cropper !== "undefined") {
+            setCropData(cropper.getCroppedCanvas().toDataURL());
+        }
+    };
 
     return (
         <div
@@ -100,7 +116,7 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ setActive, post }) => {
                     <div className="flex flex-row space-x-2">
                         <img
                             className="w-10 h-10 bg-red-200 rounded-full"
-                            src={`http://localhost:8000/storage/${post.authorImage}`}
+                            src={`http://192.168.0.124:8000/storage/${post.authorImage}`}
                         />
                         <div className="flex flex-col">
                             <span className="font-semibold">
@@ -135,21 +151,45 @@ const EditPostModal: React.FC<EditPostModalProps> = ({ setActive, post }) => {
                 </div>
                 <main>
                     <div className="relative">
-                        <div className="absolute top-5 right-5 bg-black/75 p-3 rounded-xl">
-                            <input
-                                accept="image/*"
-                                type="file"
-                                onChange={getFileInfo}
-                            />
+                        {image != "" && (
+                            <div
+                                className="absolute top-5 left-5 cursor-pointer bg-black p-3 border-2 border-gray-700 rounded-xl z-50"
+                                onClick={getCropData}
+                            >
+                                Przytnij
+                            </div>
+                        )}
+
+                        <div className="absolute top-5 right-5 bg-black/75 p-3 rounded-xl z-50">
+                            <input type="file" onChange={onChange} />
                         </div>
-                        <img
-                            className="w-full rounded-xl"
-                            src={
-                                !imageUrl
-                                    ? `http://localhost:8000/storage/${post.image}`
-                                    : imageUrl
-                            }
-                        />
+                        <div className="relative w-full aspect-[4/3] bg-red-100 rounded-xl overflow-hidden">
+                            {image == "" ? (
+                                <img
+                                    className="w-full h-full"
+                                    src={
+                                        !imageUrl
+                                            ? `http://192.168.0.124:8000/storage/${post.image}`
+                                            : imageUrl
+                                    }
+                                />
+                            ) : (
+                                <div className="w-full h-full">
+                                    <Cropper
+                                        className="w-full h-full"
+                                        viewMode={3}
+                                        aspectRatio={4 / 3}
+                                        src={image}
+                                        background={false}
+                                        responsive={true}
+                                        onInitialized={(instance: any) => {
+                                            setCropper(instance);
+                                        }}
+                                        zoomable={false}
+                                    />
+                                </div>
+                            )}
+                        </div>
                     </div>
                     <PostBottomSection
                         commentsAmount={post.commentsAmount}

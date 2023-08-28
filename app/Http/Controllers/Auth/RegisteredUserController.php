@@ -44,7 +44,7 @@ class RegisteredUserController extends Controller
             'profile_image' => 'profile_images/default_profile_image.png'
         ]);
 
-        event(new Registered($user));
+        // event(new Registered($user));
 
         Auth::login($user);
 

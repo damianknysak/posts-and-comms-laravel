@@ -88,7 +88,7 @@ const EditUserModal: React.FC<{
                         src={
                             imageUrl
                                 ? imageUrl
-                                : `http://localhost:8000/storage/${user.profileImage}`
+                                : `http://192.168.0.124:8000/storage/${user.profileImage}`
                         }
                     />
                 </div>

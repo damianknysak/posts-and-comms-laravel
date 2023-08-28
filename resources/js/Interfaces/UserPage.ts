@@ -12,6 +12,8 @@ export interface UserProps {
     postsRoute: string;
     commentsRoute: string;
     profileImage: string;
+    blurHash: string;
+    dateOfBirth: Date;
 }
 
 export interface UsersPage {

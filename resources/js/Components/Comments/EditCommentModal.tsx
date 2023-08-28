@@ -59,7 +59,7 @@ const EditCommentModal: React.FC<{
                     <div className="flex flex-row space-x-2 items-center">
                         <img
                             className="w-10 h-10 bg-red-200 rounded-full"
-                            src={`http://localhost:8000/storage/${comment.authorImage}`}
+                            src={`http://192.168.0.124:8000/storage/${comment.authorImage}`}
                         />
                         <span>{comment.author.name}</span>
                     </div>

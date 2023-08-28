@@ -55,9 +55,13 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    // 'url' => env('APP_URL', 'http://192.168.0.124:8000'),
 
-    'asset_url' => env('ASSET_URL'),
+    // 'asset_url' => env('ASSET_URL'),
+
+    'url' => 'http://192.168.0.124:8000',
+
+    'asset_url' => 'http://192.168.0.124:8000',
 
     /*
     |--------------------------------------------------------------------------
@@ -168,6 +172,7 @@ return [
         // App\Providers\BroadcastServiceProvider::class,
         App\Providers\EventServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        Intervention\Image\ImageServiceProvider::class
     ])->toArray(),
 
     /*
@@ -183,6 +188,7 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'Example' => App\Facades\Example::class,
+        'Image' => Intervention\Image\Facades\Image::class
     ])->toArray(),
 
 ];

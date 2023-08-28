@@ -2,8 +2,9 @@
 
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\PostController;
+use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\AuthController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\WebUserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,11 +22,13 @@ Route::group(['prefix' => 'v1', 'namespace' => 'App\Http\Controllers\Api\V1'], f
 
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login', [AuthController::class, 'login']);
+
+    Route::post('send-verification-email', [AuthController::class, 'send_verification_email']);
+    Route::get('user/{id}/is-email-verified', [AuthController::class, 'is_email_verified']);
 });
 
-Route::group(['prefix' => 'v1', 'namespace' => 'App\Http\Controllers\Api\V1', 'middleware' => 'auth:sanctum'], function () {
+Route::group(['prefix' => 'v1', 'namespace' => 'App\Http\Controllers\Api\V1', 'middleware' => ['auth:sanctum', 'verified']], function () {
     Route::post('logout', [AuthController::class, 'logout']);
-
     Route::get('/validate-token', function () {
         return ['Token is valid'];
     });
@@ -45,4 +48,12 @@ Route::group(['prefix' => 'v1', 'namespace' => 'App\Http\Controllers\Api\V1', 'm
     Route::post('posts/{id}/comment', 'CommentController@addCommentToPost');
     Route::put('posts/edit-comment/{id}', 'CommentController@editComment');
     Route::delete('posts/remove-comment/{id}', 'CommentController@destroy');
+
+    Route::post('/users/edit/{id}', [UserController::class, 'update']);
+    Route::get('/users/{id}', [UserController::class, 'show']);
+    Route::post('users/update-password/{id}', [UserController::class, 'update_password']);
+});
+
+Route::fallback(function () {
+    abort(404, 'API resource not found');
 });

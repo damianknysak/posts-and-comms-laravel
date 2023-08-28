@@ -25,7 +25,9 @@ class UserResource extends JsonResource
             'postsRoute' => '/posts?authorId[eq]=' . $this->id,
             'commentsAmount' => $this->comments->where('author_id',  $this->id)->count(),
             'commentsRoute' => '/comments?authorId[eq]=' . $this->id,
-            'profileImage' => $this->profile_image
+            'profileImage' => $this->profile_image,
+            'blurHash' => $this->blur_hash,
+            'dateOfBirth' => $this->date_of_birth
         ];
     }
 }

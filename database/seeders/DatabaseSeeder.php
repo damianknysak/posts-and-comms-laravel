@@ -7,7 +7,11 @@ namespace Database\Seeders;
 use App\Models\LikedPost;
 use App\Models\Post;
 use App\Models\User;
+use Bepsvpt\Blurhash\Facades\BlurHash;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Str;
@@ -59,6 +63,8 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@admin.com',
             'password' => bcrypt('test123'),
             'profile_image' => 'profile_images/default_profile_image.png',
+            'blur_hash' => 'LOI~3_WB~pWB_3ofIUj[00fQ00WC',
+            'date_of_birth' => Carbon::createFromTimestamp(rand(strtotime('1980-01-01'), strtotime('2005-12-31')))
         ]);
 
         $user->assignRole([1]);
@@ -94,6 +100,7 @@ class DatabaseSeeder extends Seeder
             // ->hasLikes(20)
             ->create();
 
+        //tworzenie lajków
         for ($i = 0; $i < 1000; $i++) {
             $reactions = array('like', 'super', 'haha', 'cry');
             $random_reaction =  $reactions[array_rand($reactions)];
@@ -112,6 +119,26 @@ class DatabaseSeeder extends Seeder
                 'user_id' => $user_rand_id,
                 'reaction' => $random_reaction,
             ]);
+        }
+
+        //dodawanie blura do kazdego zdjecia
+        $posts = Post::all();
+        foreach ($posts as $post) {
+            $imagePath = $post->image; // Przyjmuję, że pole 'image' zawiera ścieżkę do obrazu
+
+            // Przekształcenie ścieżki do instancji UploadedFile
+            $uploadedFile = new UploadedFile(
+                storage_path('app/public/' . $imagePath), // Pełna ścieżka do pliku
+                pathinfo($imagePath, PATHINFO_BASENAME) // Oryginalna nazwa pliku
+            );
+
+            // Generowanie BlurHash na podstawie pliku
+            $blur = BlurHash::encode($uploadedFile);
+
+            // Aktualizuj pole hash_blur
+            DB::table('posts')
+                ->where('id', $post->id)
+                ->update(['blur_hash' => $blur]);
         }
     }
 }

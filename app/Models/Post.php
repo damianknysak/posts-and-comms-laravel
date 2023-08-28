@@ -13,7 +13,8 @@ class Post extends Model
         'title',
         'slug',
         'author_id',
-        'image'
+        'image',
+        'blur_hash'
     ];
 
     public function comments()

@@ -11,11 +11,12 @@ use App\Http\Resources\V1\PostResource;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\User;
+use Bepsvpt\Blurhash\Facades\BlurHash;
+use Buglinjo\LaravelWebp\Facades\Webp;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Route;
+use Intervention\Image\Facades\Image;
 use Inertia\Inertia;
 
 class WebPostController extends Controller
@@ -43,13 +44,11 @@ class WebPostController extends Controller
         if (!$post) {
             abort(404);
         }
-
         $comments = Comment::orderBy('id', 'desc')
             ->where('post_id', $id)
             ->paginate();
 
         $commentsCollection = new CommentCollection($comments);
-
         return Inertia::render('Posts/Show', [
             'post' => new PostResource($post),
             'comments' => $commentsCollection,
@@ -59,35 +58,33 @@ class WebPostController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            if (Auth::user()->hasRole('Admin')) {
-                $input = [
-                    'title' => $request->title,
-                    'slug' => $request->slug,
-                ];
-                $post = Post::findOrFail($id);
+            $input = [
+                'title' => $request->title,
+                'slug' => $request->slug,
+            ];
+            $post = Post::findOrFail($id);
+            if (!$post) return response()->json(['message' => 'Post not found'], 404);
 
-                if ($request->hasfile('image')) {
-                    $destination_path = 'public/';
-                    $image = $request->file('image');
-                    $image_name = time() . '.' . $image->getClientOriginalExtension();
-                    $request->file('image')->storeAs($destination_path, $image_name);
-                    $input['image'] = $image_name;
-                    // Usuwanie starego pliku
-                    if (file_exists(public_path("storage/" . $post->image))) {
-                        unlink(public_path("storage/" . $post->image));
-                    } else {
-                        dd("file doesnt exist");
-                    }
+            if ($request->hasfile('image')) {
+                $file = $request->file('image');
+                $image_name = time() . '.' . 'webp';
+                Image::make($file)->resize(640, 480)->encode("webp")
+                    ->save(public_path('/storage/' . $image_name));
+
+                $blur = BlurHash::encode($file);
+                $input['image'] = $image_name;
+                $input['blur_hash'] = $blur;
+                // Usuwanie starego pliku
+                if (file_exists(public_path("storage/" . $post->image))) {
+                    unlink(public_path("storage/" . $post->image));
+                } else {
+                    dd("file doesnt exist");
                 }
-                $post->update($input);
-                return response()->json(['message' => 'Post updated successfully']);
-            } else {
-                return response()->json(['message' => 'Unauthorized'], 401);
             }
-        } catch (ModelNotFoundException $exception) {
-            return response()->json(['message' => 'Post not found'], 404);
+            $post->update($input);
+            return response()->json(['message' => 'Post updated successfully']);
         } catch (\Exception $exception) {
-            return response()->json(['message' => 'Error updating post'], 500);
+            return response()->json(['message' => 'Error updating post' . $exception], 500);
         }
     }
 
@@ -100,13 +97,15 @@ class WebPostController extends Controller
             'slug' => $request->slug,
         ];
         if ($request->hasfile('image')) {
-            $destination_path = 'public/';
-            $image = $request->file('image');
-            $image_name = time() . '.' . $image->getClientOriginalExtension();
-            $request->file('image')->storeAs($destination_path, $image_name);
-            $input['image'] = $image_name;
-        }
+            $file = $request->file('image');
+            $image_name = time() . '.' . 'webp';
+            Image::make($file)->resize(640, 480)->encode("webp")
+                ->save(public_path('/storage/' . $image_name));
 
+            $blur = BlurHash::encode($file);
+            $input['image'] = $image_name;
+            $input['blur_hash'] = $blur;
+        }
         return new PostResource(Post::create($input));
     }
 
@@ -114,9 +113,6 @@ class WebPostController extends Controller
     {
         try {
             $post = Post::findOrFail($id);
-            if (!Auth::user()->hasRole('Admin')) {
-                return response()->json(['message' => 'You are not authorized to delete this post.'], 403);
-            }
 
             if (file_exists(public_path("storage/" . $post->image))) {
                 unlink(public_path("storage/" . $post->image));

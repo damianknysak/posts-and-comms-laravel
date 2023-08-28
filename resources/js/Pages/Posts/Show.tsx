@@ -1,12 +1,16 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { PageProps } from "@/types";
 import Post from "@/Components/Posts/Post";
 import { PostProps } from "@/Interfaces/PostProps";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CommentsPage } from "@/Interfaces/CommentPage";
 import Comment from "@/Components/Comments/Comment";
 import PageNavigation from "@/Components/Shared/PageNavigation";
+import { FaRegComment, FaRegCommentAlt } from "react-icons/fa";
+import TextInput from "@/Components/TextInput";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 interface SinglePagePost {
     data: PostProps;
@@ -26,6 +30,7 @@ export default function Show(
     }>
 ) {
     const hereRef = useRef<HTMLDivElement | null>(null); // Utwórz referencję
+    const [newComment, setNewComment] = useState("");
 
     useEffect(() => {
         if (hereRef.current) {
@@ -34,6 +39,30 @@ export default function Show(
             });
         }
     }, []);
+
+    const handleSubmit = async () => {
+        try {
+            const formData = new FormData();
+            formData.append("comment", newComment);
+
+            const response = await axios.post(
+                `/posts/${post.data.id}/comment`,
+                formData,
+                {
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                    },
+                }
+            );
+
+            toast("Dodano komentarz!", { type: "success" });
+            router.reload({ only: ["comments", "post"] });
+            setNewComment("");
+        } catch (error) {
+            toast("Błąd przy dodawaniu posta", { type: "error" });
+        }
+    };
+
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -60,6 +89,25 @@ export default function Show(
                                 post={post.data}
                                 postsAmount={1}
                             />
+                            <div className="bg-gray-400 space-x-2 w-full lg:w-2/3 rounded-full flex justify-around items-center py-5">
+                                <textarea
+                                    value={newComment}
+                                    className="rounded-xl w-2/3 bg-gray-400 border-gray-800 border-2"
+                                    placeholder="Dodaj komentarz ..."
+                                    onChange={(e) => {
+                                        setNewComment(e.target.value);
+                                    }}
+                                />
+                                <div
+                                    onClick={handleSubmit}
+                                    className="bg-gray-800 p-3 flex space-x-2 rounded-xl cursor-pointer shadow-lg shadow-white"
+                                >
+                                    <span className="text-white text-xs">
+                                        Opublikuj
+                                    </span>
+                                    <FaRegComment className="text-white" />
+                                </div>
+                            </div>
                         </div>
                         <div className="flex flex-1 justify-center">
                             <div className="w-full lg:w-2/3 max-w-7xl px-6 space-y-2">
@@ -76,10 +124,12 @@ export default function Show(
                         </div>
 
                         <div className="flex flex-col items-center justify-center my-2">
-                            <PageNavigation
-                                links={comments.links}
-                                meta={comments.meta}
-                            />
+                            {(comments.links.next || comments.links.prev) && (
+                                <PageNavigation
+                                    meta={comments.meta}
+                                    links={comments.links}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>

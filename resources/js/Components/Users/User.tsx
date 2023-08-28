@@ -9,6 +9,7 @@ import EditUserModal from "./EditUserModal";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { SimpleDialogContainer, simpleConfirm } from "react-simple-dialogs";
+import UserImage from "./UserImage";
 
 export default function User({ user }: PageProps<{ user: UserProps }>) {
     const [isEditModalActive, setEditModalActive] = useState(false);
@@ -48,10 +49,12 @@ export default function User({ user }: PageProps<{ user: UserProps }>) {
     return (
         <div className="bg-gray-400 p-3 rounded-xl w-full max-w-lg">
             <SimpleDialogContainer />
-            <header className="relative flex flex-col items-center">
-                <img
-                    className="w-20 h-20 bg-black/75 object-contain rounded-full"
-                    src={`http://localhost:8000/storage/${user.profileImage}`}
+            <header className="relative max-h-32 flex flex-col items-center">
+                <UserImage
+                    imageUrl={user.profileImage}
+                    imageHash={user.blurHash}
+                    width={80}
+                    height={80}
                 />
                 <p className="text-lg">{user.name}</p>
                 <p className="text-sm">{user.email}</p>
@@ -75,6 +78,13 @@ export default function User({ user }: PageProps<{ user: UserProps }>) {
                 </div>
             </header>
             <main className="flex flex-col border-t border-gray-500 mt-2 pt-2">
+                <span>
+                    <span className="font-semibold">Data urodzenia:</span>{" "}
+                    {user.dateOfBirth
+                        ? new Date(user.dateOfBirth).toLocaleDateString()
+                        : "nie podano"}
+                </span>
+
                 <span>
                     <span className="font-semibold">
                         Weryfikacja użytkownika:

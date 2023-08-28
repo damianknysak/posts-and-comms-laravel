@@ -1,17 +1,36 @@
-import { router } from "@inertiajs/react";
-import axios from "axios";
 import React, { Dispatch, SetStateAction, useEffect, useState } from "react";
 import { FaExclamationCircle, FaTimes } from "react-icons/fa";
+import axios from "axios";
+import { router } from "@inertiajs/react";
 import { toast } from "react-toastify";
-
+import "react-toastify/dist/ReactToastify.css";
+import { Cropper } from "react-cropper";
+import "cropperjs/dist/cropper.css";
+import { convertDataUrlToBlob } from "@/utils/CropUtils";
 const AddPostModal: React.FC<{
     setActive: Dispatch<SetStateAction<boolean>>;
 }> = ({ setActive }) => {
-    const [selectedImage, setSelectedImage] = useState<File | null>(null);
-    const [imageUrl, setImageUrl] = useState<string | null>(null);
     const [title, setTitle] = useState("");
     const [slug, setSlug] = useState("");
+    const [selectedImage, setSelectedImage] = useState<File | null>(null);
+    const [imageUrl, setImageUrl] = useState<string | null>(null);
+    const [image, setImage] = useState("");
+    const [cropData, setCropData] = useState("#");
+    const [cropper, setCropper] = useState<any>();
     const [areAllFieldsFilled, setAreAllFieldsFilled] = useState(true);
+
+    useEffect(() => {
+        console.log(`cropper: ${cropper}`);
+    }, [cropper]);
+
+    useEffect(() => {
+        if (cropData != "#") {
+            setImageUrl(cropData);
+            setImage("");
+        }
+
+        console.log(`cropData ${cropData}`);
+    }, [cropData]);
 
     useEffect(() => {
         if (selectedImage) {
@@ -27,11 +46,18 @@ const AddPostModal: React.FC<{
 
     const handleSubmit = async () => {
         try {
+            getCropData();
             const formData = new FormData();
             formData.append("title", title);
             formData.append("slug", slug);
-            if (selectedImage) {
-                formData.append("image", selectedImage);
+
+            if (cropData != "#") {
+                const file = new File(
+                    [convertDataUrlToBlob(cropData)],
+                    "output.jpg",
+                    { type: `image/jpeg` }
+                );
+                formData.append("image", file);
             }
 
             const response = await axios.post(`/posts/add`, formData, {
@@ -42,16 +68,36 @@ const AddPostModal: React.FC<{
 
             toast("Dodano post!", { type: "success" });
         } catch (error) {
+            console.error(error);
             toast("Błąd przy dodawaniu posta", { type: "error" });
         }
     };
 
-    function getFileInfo(e: React.ChangeEvent<HTMLInputElement>) {
+    const onChange = (e: any) => {
+        e.preventDefault();
+        let files;
+        if (e.dataTransfer) {
+            files = e.dataTransfer.files;
+        } else if (e.target) {
+            files = e.target.files;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            setImage(reader.result as any);
+        };
+        reader.readAsDataURL(files[0]);
+
         if (e.target.files && e.target.files.length > 0) {
             const selectedFile = e.target.files[0];
             setSelectedImage(selectedFile);
         }
-    }
+    };
+
+    const getCropData = () => {
+        if (typeof cropper !== "undefined") {
+            setCropData(cropper.getCroppedCanvas().toDataURL());
+        }
+    };
 
     return (
         <div
@@ -98,23 +144,52 @@ const AddPostModal: React.FC<{
                     }}
                 />
                 <p className="text-xs font-semibold ">Wybierz zdjęcie</p>
-                <div className="bg-black/75 p-3 rounded-xl">
-                    <input
-                        accept="image/*"
-                        type="file"
-                        onChange={getFileInfo}
-                    />
-                </div>
-                <div className="flex justify-center">
-                    {imageUrl && (
-                        <img className="rounded-xl max-h-72" src={imageUrl} />
+
+                <div className="relative">
+                    {image != "" && (
+                        <div
+                            className="absolute top-5 left-5 cursor-pointer bg-black p-3 border-2 border-gray-700 rounded-xl z-50"
+                            onClick={getCropData}
+                        >
+                            Przytnij
+                        </div>
                     )}
+
+                    <div className="absolute top-5 right-5 bg-black/75 p-3 rounded-xl z-50">
+                        <input type="file" onChange={onChange} />
+                    </div>
+                    <div className="relative w-full aspect-[4/3] bg-red-100 rounded-xl overflow-hidden">
+                        {image == "" ? (
+                            imageUrl && (
+                                <img
+                                    className="w-full h-full"
+                                    src={!imageUrl ? `` : imageUrl}
+                                />
+                            )
+                        ) : (
+                            <div className="w-full h-full">
+                                <Cropper
+                                    className="w-full h-full"
+                                    viewMode={3}
+                                    aspectRatio={4 / 3}
+                                    src={image}
+                                    background={false}
+                                    responsive={true}
+                                    onInitialized={(instance: any) => {
+                                        setCropper(instance);
+                                    }}
+                                    zoomable={false}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </article>
             <div
                 onClick={() => {
                     if (title && slug && selectedImage) {
                         setAreAllFieldsFilled(true);
+                        getCropData();
                         handleSubmit();
                     } else {
                         setAreAllFieldsFilled(false);
